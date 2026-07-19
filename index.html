@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>재현이랑 비밀얘기하려고 만두러따</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -114,7 +114,7 @@ body {
   border: none;
   outline: none;
   font-family: var(--body);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--black);
   resize: none;
   min-height: 72px;
@@ -238,7 +238,7 @@ body {
   border-bottom: 1px solid var(--grey-border);
   outline: none;
   font-family: var(--body);
-  font-size: 13px;
+  font-size: 16px;
   color: var(--black);
   background: transparent;
   resize: none;
@@ -295,7 +295,7 @@ body {
   border-bottom: 1px solid var(--grey-border);
   outline: none;
   font-family: var(--body);
-  font-size: 13px;
+  font-size: 16px;
   color: var(--black);
   background: transparent;
   padding: 4px 0;
@@ -376,6 +376,11 @@ body {
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
+if (typeof firebase === 'undefined') {
+  document.body.innerHTML = '<div style="padding:40px;text-align:center;font-size:14px">Firebase 로딩 실패<br>인터넷 연결 확인 후 새로고침 해주세요</div>';
+  throw new Error('Firebase not loaded');
+}
+
 firebase.initializeApp({
   apiKey: "AIzaSyDNKudpK1Reofvxz9zVTy_-HvdExCeSKcY",
   authDomain: "diary-6ecb7.firebaseapp.com",
