@@ -448,10 +448,11 @@ function renderComments(comments) {
   `).join('')}</div>`;
 }
 
-db.ref('diary').orderByChild('ts').on('value', snapshot => {
+db.ref('diary').on('value', snapshot => {
   const feed = document.getElementById('diaryFeed');
   const items = [];
-  snapshot.forEach(child => items.unshift({ key: child.key, ...child.val() }));
+  snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
+  items.sort((a, b) => b.ts - a.ts);
 
   if (!items.length) {
     feed.innerHTML = `<div class="empty"><span class="empty-icon">🐾</span><p class="empty-text">아직 비밀이 없네..<br>첫 고백을 해봐</p></div>`;
@@ -493,10 +494,11 @@ function answerQ(key) {
   db.ref('qa/' + key).update({ a: text, ats: Date.now() });
 }
 
-db.ref('qa').orderByChild('ts').on('value', snapshot => {
+db.ref('qa').on('value', snapshot => {
   const feed = document.getElementById('qaFeed');
   const items = [];
-  snapshot.forEach(child => items.unshift({ key: child.key, ...child.val() }));
+  snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
+  items.sort((a, b) => b.ts - a.ts);
 
   if (!items.length) {
     feed.innerHTML = `<div class="empty"><span class="empty-icon">🐱</span><p class="empty-text">궁금한 게 없어?<br>뭐든 물어봐도 돼</p></div>`;
