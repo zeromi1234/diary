@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>재현이랑 비밀얘기하려고 만두러따</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white: #FFFFFF;
+  --black: #111111;
+  --grey-bg: #F5F5F5;
+  --grey-mid: #999999;
+  --grey-border: #E0E0E0;
+  --body: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+}
+
+html, body {
+  min-height: 100%;
+  background: #E8E8E8;
+  font-family: var(--body);
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.phone {
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  padding: 15px 18px 13px;
+  border-bottom: 1.5px solid var(--black);
+  background: var(--white);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-name {
+  font-family: var(--body);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--black);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 18px 90px;
+}
+
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 390px;
+  display: flex;
+  border-top: 1.5px solid var(--black);
+  background: var(--white);
+  z-index: 100;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 6px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--grey-mid);
+  transition: color 0.15s;
+  line-height: 1.2;
+  white-space: nowrap;
+  border-right: 1.5px solid var(--black);
+}
+.tab-btn:last-child { border-right: none; }
+.tab-btn.active { color: var(--black); }
+.tab-btn:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
+.tab-icon { font-size: 18px; line-height: 1; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.write-box {
+  border: 1.5px solid var(--black);
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 20px;
+  background: var(--white);
+}
+
+.write-box textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-family: var(--body);
+  font-size: 14px;
+  color: var(--black);
+  resize: none;
+  min-height: 72px;
+  background: transparent;
+  line-height: 1.65;
+  caret-color: var(--black);
+}
+
+.write-box textarea::placeholder { color: var(--grey-mid); font-size: 13px; }
+
+.write-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.write-hint { font-size: 10px; color: var(--grey-border); }
+
+.btn-post {
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  padding: 7px 16px;
+  border-radius: 4px;
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-post:hover { opacity: 0.72; }
+
+.entry {
+  border: 1.5px solid var(--black);
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 10px;
+  background: var(--white);
+  animation: popIn 0.22s cubic-bezier(.2,.8,.4,1) both;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.entry-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--black);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.entry-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--grey-border);
+}
+
+.entry-time {
+  font-size: 10px;
+  color: var(--grey-mid);
+  font-variant-numeric: tabular-nums;
+}
+
+.entry-paw { font-size: 11px; opacity: 0.35; }
+
+.qa-entry {
+  border: 1.5px solid var(--black);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  animation: popIn 0.22s cubic-bezier(.2,.8,.4,1) both;
+}
+
+.qa-q-wrap {
+  padding: 13px 14px 12px;
+  background: var(--grey-bg);
+  border-bottom: 1.5px solid var(--black);
+}
+
+.qa-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--grey-mid);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.qa-q-text { font-size: 14px; line-height: 1.6; color: var(--black); word-break: break-word; }
+
+.qa-time {
+  font-size: 10px;
+  color: var(--grey-mid);
+  margin-top: 6px;
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+.qa-a-wrap { padding: 12px 14px 13px; background: var(--white); }
+
+.qa-a-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--black);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.qa-input-area { display: flex; flex-direction: column; gap: 8px; }
+
+.qa-textarea {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--grey-border);
+  outline: none;
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--black);
+  background: transparent;
+  resize: none;
+  min-height: 44px;
+  line-height: 1.6;
+  caret-color: var(--black);
+  padding-bottom: 4px;
+}
+
+.qa-textarea::placeholder { color: var(--grey-mid); font-size: 12px; }
+
+.btn-answer {
+  align-self: flex-end;
+  background: none;
+  border: 1.5px solid var(--black);
+  padding: 5px 13px;
+  border-radius: 4px;
+  font-family: var(--body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--black);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-answer:hover { background: var(--black); color: var(--white); }
+
+.empty { text-align: center; padding: 52px 24px; }
+.empty-icon { font-size: 44px; display: block; margin-bottom: 14px; }
+.empty-text { font-size: 15px; color: var(--grey-mid); line-height: 1.7; }
+
+.comment-section {
+  margin-top: 10px;
+  border-top: 1px solid var(--grey-border);
+  padding-top: 10px;
+}
+
+.comment-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+
+.comment-item { display: flex; gap: 8px; align-items: flex-start; }
+
+.comment-paw { font-size: 11px; margin-top: 2px; flex-shrink: 0; opacity: 0.5; }
+
+.comment-body { flex: 1; min-width: 0; }
+
+.comment-text { font-size: 13px; line-height: 1.55; color: var(--black); word-break: break-word; }
+
+.comment-time { font-size: 10px; color: var(--grey-mid); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+.comment-input-row { display: flex; gap: 8px; align-items: flex-end; }
+
+.comment-input {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid var(--grey-border);
+  outline: none;
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--black);
+  background: transparent;
+  padding: 4px 0;
+  caret-color: var(--black);
+  line-height: 1.55;
+  resize: none;
+  overflow: hidden;
+  min-height: 22px;
+}
+
+.comment-input::placeholder { color: var(--grey-mid); font-size: 12px; }
+
+.btn-comment {
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.btn-comment:hover { opacity: 0.72; }
+
+.loading { text-align: center; padding: 40px; color: var(--grey-mid); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .entry, .qa-entry { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <header class="app-header">
+    <div class="app-name">재현이랑 비밀얘기하려고 만두러따</div>
+  </header>
+
+  <main class="content">
+    <div class="tab-panel active" id="panel-diary">
+      <div class="write-box">
+        <textarea id="diaryInput" placeholder="속마음 남겨두기" rows="3"></textarea>
+        <div class="write-footer">
+          <span class="write-hint">⌘↵ 로도 올릴 수 있어</span>
+          <button class="btn-post" onclick="postDiary()">발톱도장 꾹</button>
+        </div>
+      </div>
+      <div id="diaryFeed"><div class="loading">불러오는 중...</div></div>
+    </div>
+
+    <div class="tab-panel" id="panel-qa">
+      <div class="write-box">
+        <textarea id="qaInput" placeholder="뭐든 다 물어봐!" rows="3"></textarea>
+        <div class="write-footer">
+          <span class="write-hint">⌘↵ 로도 올릴 수 있어</span>
+          <button class="btn-post" onclick="postQuestion()">물어보기</button>
+        </div>
+      </div>
+      <div id="qaFeed"><div class="loading">불러오는 중...</div></div>
+    </div>
+  </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" id="tab-diary" onclick="switchTab('diary')">
+      <span class="tab-icon">📓</span>
+      비밀일기
+    </button>
+    <button class="tab-btn" id="tab-qa" onclick="switchTab('qa')">
+      <span class="tab-icon">🐱</span>
+      또 궁금한거 있어?
+    </button>
+  </nav>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyDNKudpK1Reofvxz9zVTy_-HvdExCeSKcY",
+  authDomain: "diary-6ecb7.firebaseapp.com",
+  databaseURL: "https://diary-6ecb7-default-rtdb.firebaseio.com",
+  projectId: "diary-6ecb7",
+  storageBucket: "diary-6ecb7.firebasestorage.app",
+  messagingSenderId: "714775235881",
+  appId: "1:714775235881:web:e496a6a5c3e2996ae7fb38"
+});
+
+const db = firebase.database();
+
+function switchTab(tab) {
+  ['diary','qa'].forEach(t => {
+    document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+function fmt(ts) {
+  const d = new Date(ts);
+  return `${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+// ── Diary ──
+function postDiary() {
+  const el = document.getElementById('diaryInput');
+  const text = el.value.trim();
+  if (!text) return;
+  db.ref('diary').push({ text, ts: Date.now() });
+  el.value = '';
+}
+
+function postComment(entryKey) {
+  const el = document.getElementById('cinput-' + entryKey);
+  const text = el.value.trim();
+  if (!text) return;
+  db.ref('diary/' + entryKey + '/comments').push({ text, ts: Date.now() });
+  el.value = '';
+  el.style.height = 'auto';
+}
+
+function renderComments(comments) {
+  if (!comments) return '';
+  const list = Object.values(comments).sort((a,b) => a.ts - b.ts);
+  if (!list.length) return '';
+  return `<div class="comment-list">${list.map(c => `
+    <div class="comment-item">
+      <span class="comment-paw">🐾</span>
+      <div class="comment-body">
+        <div class="comment-text">${esc(c.text)}</div>
+        <div class="comment-time">${fmt(c.ts)}</div>
+      </div>
+    </div>
+  `).join('')}</div>`;
+}
+
+db.ref('diary').orderByChild('ts').on('value', snapshot => {
+  const feed = document.getElementById('diaryFeed');
+  const items = [];
+  snapshot.forEach(child => items.unshift({ key: child.key, ...child.val() }));
+
+  if (!items.length) {
+    feed.innerHTML = `<div class="empty"><span class="empty-icon">🐾</span><p class="empty-text">아직 비밀이 없네..<br>첫 고백을 해봐</p></div>`;
+    return;
+  }
+
+  feed.innerHTML = items.map(it => `
+    <div class="entry">
+      <div class="entry-text">${esc(it.text)}</div>
+      <div class="entry-meta">
+        <span class="entry-time">${fmt(it.ts)}</span>
+        <span class="entry-paw">🐾</span>
+      </div>
+      <div class="comment-section">
+        ${renderComments(it.comments)}
+        <div class="comment-input-row">
+          <textarea class="comment-input" id="cinput-${it.key}" placeholder="댓글 달기..." rows="1" oninput="autoResize(this)"></textarea>
+          <button class="btn-comment" onclick="postComment('${it.key}')">↑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+});
+
+// ── Q&A ──
+function postQuestion() {
+  const el = document.getElementById('qaInput');
+  const text = el.value.trim();
+  if (!text) return;
+  db.ref('qa').push({ q: text, a: null, ts: Date.now(), ats: null });
+  el.value = '';
+}
+
+function answerQ(key) {
+  const el = document.getElementById('ainput-' + key);
+  const text = el.value.trim();
+  if (!text) return;
+  db.ref('qa/' + key).update({ a: text, ats: Date.now() });
+}
+
+db.ref('qa').orderByChild('ts').on('value', snapshot => {
+  const feed = document.getElementById('qaFeed');
+  const items = [];
+  snapshot.forEach(child => items.unshift({ key: child.key, ...child.val() }));
+
+  if (!items.length) {
+    feed.innerHTML = `<div class="empty"><span class="empty-icon">🐱</span><p class="empty-text">궁금한 게 없어?<br>뭐든 물어봐도 돼</p></div>`;
+    return;
+  }
+
+  feed.innerHTML = items.map(it => `
+    <div class="qa-entry">
+      <div class="qa-q-wrap">
+        <div class="qa-label">질문</div>
+        <div class="qa-q-text">${esc(it.q)}</div>
+        <span class="qa-time">${fmt(it.ts)}</span>
+      </div>
+      <div class="qa-a-wrap">
+        <div class="qa-label">답장</div>
+        ${it.a
+          ? `<div class="qa-a-text">${esc(it.a)}</div><span class="qa-time">${fmt(it.ats)}</span>`
+          : `<div class="qa-input-area">
+               <textarea class="qa-textarea" id="ainput-${it.key}" placeholder="냐옹... 대답할게" rows="2"></textarea>
+               <button class="btn-answer" onclick="answerQ('${it.key}')">답장하기</button>
+             </div>`
+        }
+      </div>
+    </div>
+  `).join('');
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.metaKey) {
+    if (document.getElementById('panel-diary').classList.contains('active')) postDiary();
+    else postQuestion();
+  }
+});
+</script>
+</body>
+</html>
