@@ -325,6 +325,18 @@ body {
 }
 .btn-comment:hover { opacity: 0.72; }
 
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--grey-mid);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.btn-delete:hover { color: #e00; }
+
 .loading { text-align: center; padding: 40px; color: var(--grey-mid); font-size: 13px; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -439,6 +451,16 @@ function renderComments(comments) {
   `).join('')}</div>`;
 }
 
+async function deleteDiary(key) {
+  await fetch(DB + '/diary/' + key + '.json', { method: 'DELETE' });
+  loadDiary();
+}
+
+async function deleteQA(key) {
+  await fetch(DB + '/qa/' + key + '.json', { method: 'DELETE' });
+  loadQA();
+}
+
 async function loadDiary() {
   const feed = document.getElementById('diaryFeed');
   try {
@@ -455,7 +477,10 @@ async function loadDiary() {
         <div class="entry-text">${esc(it.text)}</div>
         <div class="entry-meta">
           <span class="entry-time">${fmt(it.ts)}</span>
-          <span class="entry-paw">🐾</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="entry-paw">🐾</span>
+            <button class="btn-delete" onclick="deleteDiary('${it.key}')">×</button>
+          </div>
         </div>
         <div class="comment-section">
           ${renderComments(it.comments)}
@@ -511,7 +536,10 @@ async function loadQA() {
     feed.innerHTML = items.map(it => `
       <div class="qa-entry">
         <div class="qa-q-wrap">
-          <div class="qa-label">질문</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div class="qa-label">질문</div>
+            <button class="btn-delete" onclick="deleteQA('${it.key}')">×</button>
+          </div>
           <div class="qa-q-text">${esc(it.q)}</div>
           <span class="qa-time">${fmt(it.ts)}</span>
         </div>
