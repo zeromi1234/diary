@@ -376,10 +376,18 @@ body {
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
+// ── 디버그 표시줄 ──
+const $dbg = document.createElement('div');
+$dbg.style.cssText = 'position:fixed;bottom:58px;left:0;right:0;background:#111;color:#0f0;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;white-space:nowrap;overflow:hidden;';
+document.body.appendChild($dbg);
+function dbg(msg) { $dbg.textContent = msg; }
+
 if (typeof firebase === 'undefined') {
   document.body.innerHTML = '<div style="padding:40px;text-align:center;font-size:14px">Firebase 로딩 실패<br>인터넷 연결 확인 후 새로고침 해주세요</div>';
   throw new Error('Firebase not loaded');
 }
+
+dbg('1. firebase SDK 로드됨');
 
 firebase.initializeApp({
   apiKey: "AIzaSyDNKudpK1Reofvxz9zVTy_-HvdExCeSKcY",
@@ -392,6 +400,11 @@ firebase.initializeApp({
 });
 
 const db = firebase.database();
+dbg('2. DB 생성됨');
+
+db.ref('.info/connected').on('value', snap => {
+  dbg(snap.val() ? '3. Firebase 연결 성공!' : '3. Firebase 연결 중...');
+});
 
 function switchTab(tab) {
   ['diary','qa'].forEach(t => {
@@ -449,15 +462,19 @@ function renderComments(comments) {
 }
 
 db.ref('diary').on('value', snapshot => {
-  const feed = document.getElementById('diaryFeed');
-  const items = [];
-  snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
-  items.sort((a, b) => b.ts - a.ts);
+  dbg('4. diary 리스너 실행됨');
+  try {
+    const feed = document.getElementById('diaryFeed');
+    if (!feed) { dbg('4. ERROR: diaryFeed 엘리먼트 없음'); return; }
+    const items = [];
+    snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.sort((a, b) => b.ts - a.ts);
+    dbg('4. diary 항목 수: ' + items.length);
 
-  if (!items.length) {
-    feed.innerHTML = `<div class="empty"><span class="empty-icon">🐾</span><p class="empty-text">아직 비밀이 없네..<br>첫 고백을 해봐</p></div>`;
-    return;
-  }
+    if (!items.length) {
+      feed.innerHTML = `<div class="empty"><span class="empty-icon">🐾</span><p class="empty-text">아직 비밀이 없네..<br>첫 고백을 해봐</p></div>`;
+      return;
+    }
 
   feed.innerHTML = items.map(it => `
     <div class="entry">
@@ -475,7 +492,8 @@ db.ref('diary').on('value', snapshot => {
       </div>
     </div>
   `).join('');
-});
+  } catch(e) { dbg('4. ERROR: ' + e.message); alert('렌더 오류: ' + e.message); }
+}, err => { dbg('4. 읽기 오류: ' + err.message); alert('diary 읽기 오류: ' + err.message); });
 
 // ── Q&A ──
 function postQuestion() {
@@ -495,36 +513,41 @@ function answerQ(key) {
 }
 
 db.ref('qa').on('value', snapshot => {
-  const feed = document.getElementById('qaFeed');
-  const items = [];
-  snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
-  items.sort((a, b) => b.ts - a.ts);
+  dbg('5. qa 리스너 실행됨');
+  try {
+    const feed = document.getElementById('qaFeed');
+    if (!feed) { dbg('5. ERROR: qaFeed 엘리먼트 없음'); return; }
+    const items = [];
+    snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.sort((a, b) => b.ts - a.ts);
+    dbg('5. qa 항목 수: ' + items.length);
 
-  if (!items.length) {
-    feed.innerHTML = `<div class="empty"><span class="empty-icon">🐱</span><p class="empty-text">궁금한 게 없어?<br>뭐든 물어봐도 돼</p></div>`;
-    return;
-  }
+    if (!items.length) {
+      feed.innerHTML = `<div class="empty"><span class="empty-icon">🐱</span><p class="empty-text">궁금한 게 없어?<br>뭐든 물어봐도 돼</p></div>`;
+      return;
+    }
 
-  feed.innerHTML = items.map(it => `
-    <div class="qa-entry">
-      <div class="qa-q-wrap">
-        <div class="qa-label">질문</div>
-        <div class="qa-q-text">${esc(it.q)}</div>
-        <span class="qa-time">${fmt(it.ts)}</span>
+    feed.innerHTML = items.map(it => `
+      <div class="qa-entry">
+        <div class="qa-q-wrap">
+          <div class="qa-label">질문</div>
+          <div class="qa-q-text">${esc(it.q)}</div>
+          <span class="qa-time">${fmt(it.ts)}</span>
+        </div>
+        <div class="qa-a-wrap">
+          <div class="qa-label">답장</div>
+          ${it.a
+            ? `<div class="qa-a-text">${esc(it.a)}</div><span class="qa-time">${fmt(it.ats)}</span>`
+            : `<div class="qa-input-area">
+                 <textarea class="qa-textarea" id="ainput-${it.key}" placeholder="냐옹... 대답할게" rows="2"></textarea>
+                 <button class="btn-answer" onclick="answerQ('${it.key}')">답장하기</button>
+               </div>`
+          }
+        </div>
       </div>
-      <div class="qa-a-wrap">
-        <div class="qa-label">답장</div>
-        ${it.a
-          ? `<div class="qa-a-text">${esc(it.a)}</div><span class="qa-time">${fmt(it.ats)}</span>`
-          : `<div class="qa-input-area">
-               <textarea class="qa-textarea" id="ainput-${it.key}" placeholder="냐옹... 대답할게" rows="2"></textarea>
-               <button class="btn-answer" onclick="answerQ('${it.key}')">답장하기</button>
-             </div>`
-        }
-      </div>
-    </div>
-  `).join('');
-});
+    `).join('');
+  } catch(e) { dbg('5. ERROR: ' + e.message); alert('qa 렌더 오류: ' + e.message); }
+}, err => { dbg('5. qa 읽기 오류: ' + err.message); alert('qa 읽기 오류: ' + err.message); });
 
 </script>
 </body>
