@@ -552,11 +552,16 @@ async function loadQA() {
   } catch(e) { feed.innerHTML = `<div class="empty"><p class="empty-text">불러오기 실패 😿<br>${e.message}</p></div>`; }
 }
 
-// 초기 로드 + 5초마다 자동 갱신
+function isTyping() {
+  const a = document.activeElement;
+  return a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT');
+}
+
+// 초기 로드 + 5초마다 자동 갱신 (입력 중이면 건너뜀)
 loadDiary();
 loadQA();
-setInterval(loadDiary, 5000);
-setInterval(loadQA, 5000);
+setInterval(() => { if (!isTyping()) loadDiary(); }, 5000);
+setInterval(() => { if (!isTyping()) loadQA(); }, 5000);
 </script>
 </body>
 </html>
