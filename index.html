@@ -344,7 +344,6 @@ body {
       <div class="write-box">
         <textarea id="diaryInput" placeholder="속마음 남겨두기" rows="3"></textarea>
         <div class="write-footer">
-          <span class="write-hint">⌘↵ 로도 올릴 수 있어</span>
           <button class="btn-post" onclick="postDiary()">발톱도장 꾹</button>
         </div>
       </div>
@@ -355,7 +354,6 @@ body {
       <div class="write-box">
         <textarea id="qaInput" placeholder="뭐든 다 물어봐!" rows="3"></textarea>
         <div class="write-footer">
-          <span class="write-hint">⌘↵ 로도 올릴 수 있어</span>
           <button class="btn-post" onclick="postQuestion()">물어보기</button>
         </div>
       </div>
@@ -521,12 +519,6 @@ db.ref('qa').orderByChild('ts').on('value', snapshot => {
   `).join('');
 });
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.metaKey) {
-    if (document.getElementById('panel-diary').classList.contains('active')) postDiary();
-    else postQuestion();
-  }
-});
 </script>
 </body>
 </html>
