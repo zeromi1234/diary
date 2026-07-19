@@ -477,10 +477,7 @@ async function loadDiary() {
         <div class="entry-text">${esc(it.text)}</div>
         <div class="entry-meta">
           <span class="entry-time">${fmt(it.ts)}</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span class="entry-paw">🐾</span>
-            <button class="btn-delete" onclick="deleteDiary('${it.key}')">×</button>
-          </div>
+          <span class="entry-paw">🐾</span>
         </div>
         <div class="comment-section">
           ${renderComments(it.comments)}
@@ -536,10 +533,7 @@ async function loadQA() {
     feed.innerHTML = items.map(it => `
       <div class="qa-entry">
         <div class="qa-q-wrap">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <div class="qa-label">질문</div>
-            <button class="btn-delete" onclick="deleteQA('${it.key}')">×</button>
-          </div>
+          <div class="qa-label">질문</div>
           <div class="qa-q-text">${esc(it.q)}</div>
           <span class="qa-time">${fmt(it.ts)}</span>
         </div>
