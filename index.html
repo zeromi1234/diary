@@ -416,7 +416,8 @@ function postDiary() {
   const el = document.getElementById('diaryInput');
   const text = el.value.trim();
   if (!text) return;
-  db.ref('diary').push({ text, ts: Date.now() });
+  db.ref('diary').push({ text, ts: Date.now() })
+    .catch(err => alert('저장 실패: ' + err.message));
   el.value = '';
 }
 
@@ -477,7 +478,8 @@ function postQuestion() {
   const el = document.getElementById('qaInput');
   const text = el.value.trim();
   if (!text) return;
-  db.ref('qa').push({ q: text, a: null, ts: Date.now(), ats: null });
+  db.ref('qa').push({ q: text, ts: Date.now() })
+    .catch(err => alert('저장 실패: ' + err.message));
   el.value = '';
 }
 
