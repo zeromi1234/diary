@@ -373,39 +373,20 @@ body {
   </nav>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
-// ── 디버그 표시줄 ──
-const $dbg = document.createElement('div');
-$dbg.style.cssText = 'position:fixed;bottom:58px;left:0;right:0;background:#111;color:#0f0;font-size:10px;padding:3px 8px;z-index:9999;font-family:monospace;white-space:nowrap;overflow:hidden;';
-document.body.appendChild($dbg);
-function dbg(msg) { $dbg.textContent = msg; }
+const DB = 'https://diary-6ecb7-default-rtdb.firebaseio.com';
 
-if (typeof firebase === 'undefined') {
-  document.body.innerHTML = '<div style="padding:40px;text-align:center;font-size:14px">Firebase 로딩 실패<br>인터넷 연결 확인 후 새로고침 해주세요</div>';
-  throw new Error('Firebase not loaded');
+function fmt(ts) {
+  const d = new Date(ts);
+  return `${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
-
-dbg('1. firebase SDK 로드됨');
-
-firebase.initializeApp({
-  apiKey: "AIzaSyDNKudpK1Reofvxz9zVTy_-HvdExCeSKcY",
-  authDomain: "diary-6ecb7.firebaseapp.com",
-  databaseURL: "https://diary-6ecb7-default-rtdb.firebaseio.com",
-  projectId: "diary-6ecb7",
-  storageBucket: "diary-6ecb7.firebasestorage.app",
-  messagingSenderId: "714775235881",
-  appId: "1:714775235881:web:e496a6a5c3e2996ae7fb38"
-});
-
-const db = firebase.database();
-dbg('2. DB 생성됨');
-
-db.ref('.info/connected').on('value', snap => {
-  dbg(snap.val() ? '3. Firebase 연결 성공!' : '3. Firebase 연결 중...');
-});
-
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
 function switchTab(tab) {
   ['diary','qa'].forEach(t => {
     document.getElementById('panel-'+t).classList.toggle('active', t===tab);
@@ -413,37 +394,34 @@ function switchTab(tab) {
   });
 }
 
-function fmt(ts) {
-  const d = new Date(ts);
-  return `${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-}
-
 // ── Diary ──
-function postDiary() {
+async function postDiary() {
   const el = document.getElementById('diaryInput');
   const text = el.value.trim();
   if (!text) return;
-  db.ref('diary').push({ text, ts: Date.now() })
-    .catch(err => alert('저장 실패: ' + err.message));
   el.value = '';
+  try {
+    await fetch(DB + '/diary.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, ts: Date.now() })
+    });
+    loadDiary();
+  } catch(e) { alert('저장 실패: ' + e.message); }
 }
 
-function postComment(entryKey) {
+async function postComment(entryKey) {
   const el = document.getElementById('cinput-' + entryKey);
   const text = el.value.trim();
   if (!text) return;
-  db.ref('diary/' + entryKey + '/comments').push({ text, ts: Date.now() });
   el.value = '';
   el.style.height = 'auto';
+  await fetch(DB + '/diary/' + entryKey + '/comments.json', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, ts: Date.now() })
+  });
+  loadDiary();
 }
 
 function renderComments(comments) {
@@ -461,72 +439,75 @@ function renderComments(comments) {
   `).join('')}</div>`;
 }
 
-db.ref('diary').on('value', snapshot => {
-  dbg('4. diary 리스너 실행됨');
+async function loadDiary() {
+  const feed = document.getElementById('diaryFeed');
   try {
-    const feed = document.getElementById('diaryFeed');
-    if (!feed) { dbg('4. ERROR: diaryFeed 엘리먼트 없음'); return; }
-    const items = [];
-    snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
-    items.sort((a, b) => b.ts - a.ts);
-    dbg('4. diary 항목 수: ' + items.length);
-
-    if (!items.length) {
+    const res = await fetch(DB + '/diary.json');
+    const data = await res.json();
+    if (!data) {
       feed.innerHTML = `<div class="empty"><span class="empty-icon">🐾</span><p class="empty-text">아직 비밀이 없네..<br>첫 고백을 해봐</p></div>`;
       return;
     }
-
-  feed.innerHTML = items.map(it => `
-    <div class="entry">
-      <div class="entry-text">${esc(it.text)}</div>
-      <div class="entry-meta">
-        <span class="entry-time">${fmt(it.ts)}</span>
-        <span class="entry-paw">🐾</span>
-      </div>
-      <div class="comment-section">
-        ${renderComments(it.comments)}
-        <div class="comment-input-row">
-          <textarea class="comment-input" id="cinput-${it.key}" placeholder="댓글 달기..." rows="1" oninput="autoResize(this)"></textarea>
-          <button class="btn-comment" onclick="postComment('${it.key}')">↑</button>
+    const items = Object.entries(data).map(([key, val]) => ({ key, ...val }));
+    items.sort((a, b) => b.ts - a.ts);
+    feed.innerHTML = items.map(it => `
+      <div class="entry">
+        <div class="entry-text">${esc(it.text)}</div>
+        <div class="entry-meta">
+          <span class="entry-time">${fmt(it.ts)}</span>
+          <span class="entry-paw">🐾</span>
+        </div>
+        <div class="comment-section">
+          ${renderComments(it.comments)}
+          <div class="comment-input-row">
+            <textarea class="comment-input" id="cinput-${it.key}" placeholder="댓글 달기..." rows="1" oninput="autoResize(this)"></textarea>
+            <button class="btn-comment" onclick="postComment('${it.key}')">↑</button>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
-  } catch(e) { dbg('4. ERROR: ' + e.message); alert('렌더 오류: ' + e.message); }
-}, err => { dbg('4. 읽기 오류: ' + err.message); alert('diary 읽기 오류: ' + err.message); });
+    `).join('');
+  } catch(e) { feed.innerHTML = `<div class="empty"><p class="empty-text">불러오기 실패 😿<br>${e.message}</p></div>`; }
+}
 
 // ── Q&A ──
-function postQuestion() {
+async function postQuestion() {
   const el = document.getElementById('qaInput');
   const text = el.value.trim();
   if (!text) return;
-  db.ref('qa').push({ q: text, ts: Date.now() })
-    .catch(err => alert('저장 실패: ' + err.message));
   el.value = '';
+  try {
+    await fetch(DB + '/qa.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: text, ts: Date.now() })
+    });
+    loadQA();
+  } catch(e) { alert('저장 실패: ' + e.message); }
 }
 
-function answerQ(key) {
+async function answerQ(key) {
   const el = document.getElementById('ainput-' + key);
   const text = el.value.trim();
   if (!text) return;
-  db.ref('qa/' + key).update({ a: text, ats: Date.now() });
+  await fetch(DB + '/qa/' + key + '.json', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ a: text, ats: Date.now() })
+  });
+  loadQA();
 }
 
-db.ref('qa').on('value', snapshot => {
-  dbg('5. qa 리스너 실행됨');
+async function loadQA() {
+  const feed = document.getElementById('qaFeed');
   try {
-    const feed = document.getElementById('qaFeed');
-    if (!feed) { dbg('5. ERROR: qaFeed 엘리먼트 없음'); return; }
-    const items = [];
-    snapshot.forEach(child => items.push({ key: child.key, ...child.val() }));
-    items.sort((a, b) => b.ts - a.ts);
-    dbg('5. qa 항목 수: ' + items.length);
-
-    if (!items.length) {
+    const res = await fetch(DB + '/qa.json');
+    const data = await res.json();
+    if (!data) {
       feed.innerHTML = `<div class="empty"><span class="empty-icon">🐱</span><p class="empty-text">궁금한 게 없어?<br>뭐든 물어봐도 돼</p></div>`;
       return;
     }
-
+    const items = Object.entries(data).map(([key, val]) => ({ key, ...val }));
+    items.sort((a, b) => b.ts - a.ts);
     feed.innerHTML = items.map(it => `
       <div class="qa-entry">
         <div class="qa-q-wrap">
@@ -546,9 +527,14 @@ db.ref('qa').on('value', snapshot => {
         </div>
       </div>
     `).join('');
-  } catch(e) { dbg('5. ERROR: ' + e.message); alert('qa 렌더 오류: ' + e.message); }
-}, err => { dbg('5. qa 읽기 오류: ' + err.message); alert('qa 읽기 오류: ' + err.message); });
+  } catch(e) { feed.innerHTML = `<div class="empty"><p class="empty-text">불러오기 실패 😿<br>${e.message}</p></div>`; }
+}
 
+// 초기 로드 + 5초마다 자동 갱신
+loadDiary();
+loadQA();
+setInterval(loadDiary, 5000);
+setInterval(loadQA, 5000);
 </script>
 </body>
 </html>
